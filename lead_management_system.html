@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lead Management & Email Tracking System</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; }
+.container { max-width: 860px; margin: 0 auto; padding: 2rem 1rem; }
+h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.5rem; }
+
+.nav { display: flex; gap: 4px; padding-bottom: 1.25rem; border-bottom: 1px solid #e0e0e0; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.nav button { padding: 7px 16px; border-radius: 8px; border: 1px solid #d0d0d0; background: transparent; cursor: pointer; font-size: 13px; color: #555; transition: all 0.15s; }
+.nav button.active { background: #fff; color: #111; border-color: #aaa; font-weight: 500; }
+.nav button:hover:not(.active) { background: #eee; }
+.page { display: none; }
+.page.active { display: block; }
+
+.card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
+.metric { background: #f0f0f0; border-radius: 8px; padding: 1rem; }
+.metric .label { font-size: 12px; color: #666; margin-bottom: 6px; }
+.metric .value { font-size: 22px; font-weight: 500; color: #111; }
+.metric.highlight .value { color: #185FA5; }
+.progress-bar { height: 6px; border-radius: 3px; background: #ddd; overflow: hidden; margin-top: 6px; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+
+label { display: block; font-size: 13px; color: #555; margin-bottom: 5px; margin-top: 14px; }
+label:first-child { margin-top: 0; }
+input, textarea, select {
+  width: 100%; font-size: 14px; padding: 8px 12px;
+  border: 1px solid #d0d0d0; border-radius: 8px;
+  background: #fff; color: #111; outline: none;
+  font-family: inherit;
+}
+input:focus, textarea:focus { border-color: #185FA5; box-shadow: 0 0 0 3px rgba(24,95,165,0.12); }
+textarea { height: 90px; resize: vertical; }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; border: 1px solid #d0d0d0; background: transparent; cursor: pointer; font-size: 14px; color: #111; transition: all 0.15s; font-family: inherit; }
+.btn:hover { background: #eee; }
+.btn.primary { background: #185FA5; color: #fff; border-color: #185FA5; }
+.btn.primary:hover { background: #0C447C; }
+.btn:active { transform: scale(0.98); }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }
+
+.badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.badge.high { background: #FCEBEB; color: #A32D2D; }
+.badge.medium { background: #FAEEDA; color: #854F0B; }
+.badge.low { background: #EAF3DE; color: #3B6D11; }
+.badge.cat { background: #EEEDFE; color: #534AB7; }
+.badge.sent { background: #E6F1FB; color: #185FA5; }
+.badge.opened { background: #E1F5EE; color: #0F6E56; }
+.badge.clicked { background: #EAF3DE; color: #3B6D11; }
+
+.lead-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+.lead-row:last-child { border-bottom: none; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: #E6F1FB; display: flex; align-items: center; justify-content: center; font-weight: 500; font-size: 12px; color: #185FA5; flex-shrink: 0; }
+.lead-info { flex: 1; min-width: 0; }
+.lead-name { font-weight: 500; color: #111; }
+.lead-meta { color: #888; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.section-title { font-size: 15px; font-weight: 500; color: #111; margin-bottom: 12px; }
+
+.toast { position: fixed; top: 16px; right: 16px; background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 12px 16px; font-size: 13px; z-index: 100; display: none; max-width: 280px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.toast.show { display: flex; align-items: flex-start; gap: 10px; }
+.toast-icon { color: #0F6E56; font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+
+.email-preview { background: #f8f8f8; border-radius: 8px; padding: 1rem; font-size: 13px; color: #555; line-height: 1.8; }
+.email-preview strong { color: #111; }
+.tlink { color: #185FA5; text-decoration: underline; cursor: pointer; }
+
+.empty-state { text-align: center; padding: 2.5rem 1rem; color: #aaa; font-size: 14px; }
+.ai-box { background: #f4f4fb; border-radius: 8px; padding: 1rem; margin-top: 10px; }
+
+hr { border: none; border-top: 1px solid #e0e0e0; margin: 10px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Lead Management & Email Tracking System</h1>
+
+  <div class="toast" id="toast">
+    <i class="ti ti-circle-check toast-icon"></i>
+    <div id="toast-msg">Lead saved and email sent!</div>
+  </div>
+
+  <div class="nav">
+    <button class="active" onclick="switchPage('form')"><i class="ti ti-user-plus"></i> Capture lead</button>
+    <button onclick="switchPage('leads')"><i class="ti ti-table"></i> Lead database</button>
+    <button onclick="switchPage('email')"><i class="ti ti-mail"></i> Email tracker</button>
+    <button onclick="switchPage('analytics')"><i class="ti ti-chart-bar"></i> Analytics</button>
+  </div>
+
+  <!-- FORM PAGE -->
+  <div id="page-form" class="page active">
+    <div class="card">
+      <div class="section-title">Lead capture form</div>
+      <div class="form-row">
+        <div><label>Full name <span style="color:#E24B4A">*</span></label><input id="f-name" type="text" placeholder="Rahul Sharma"></div>
+        <div><label>Email address <span style="color:#E24B4A">*</span></label><input id="f-email" type="email" placeholder="rahul@gmail.com"></div>
+      </div>
+      <div class="form-row">
+        <div><label>Phone number</label><input id="f-phone" type="tel" placeholder="9876543210"></div>
+        <div><label>Company name <span style="color:#aaa;font-size:11px">(optional)</span></label><input id="f-company" type="text" placeholder="ABC Pvt Ltd"></div>
+      </div>
+      <label>Requirement / message <span style="color:#E24B4A">*</span></label>
+      <textarea id="f-req" placeholder="Describe what you need — e.g. 'Need AI automation for our sales pipeline'"></textarea>
+      <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+        <button class="btn primary" onclick="submitLead()"><i class="ti ti-send"></i> Submit & send email</button>
+        <span id="form-error" style="font-size:13px;color:#E24B4A;display:none"></span>
+      </div>
+    </div>
+
+    <div class="card" id="email-preview-box" style="display:none">
+      <div class="section-title">Email preview sent to lead</div>
+      <div class="email-preview" id="email-preview-content"></div>
+    </div>
+
+    <div class="card" id="ai-result-box" style="display:none">
+      <div class="section-title"><i class="ti ti-sparkles" style="color:#534AB7"></i> AI lead classification</div>
+      <div class="ai-box" id="ai-output"></div>
+    </div>
+  </div>
+
+  <!-- LEADS PAGE -->
+  <div id="page-leads" class="page">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="section-title" style="margin:0">Lead database</div>
+        <span id="lead-count-badge" class="badge cat">0 leads</span>
+      </div>
+      <div id="lead-list"><div class="empty-state"><i class="ti ti-inbox" style="font-size:32px;display:block;margin-bottom:8px"></i>No leads yet. Submit the form to get started.</div></div>
+    </div>
+  </div>
+
+  <!-- EMAIL TRACKER PAGE -->
+  <div id="page-email" class="page">
+    <div class="metric-grid">
+      <div class="metric"><div class="label">Emails sent</div><div class="value" id="stat-sent">0</div></div>
+      <div class="metric highlight"><div class="label">Emails opened</div><div class="value" id="stat-opened">0</div></div>
+      <div class="metric highlight">
+        <div class="label">Open rate</div><div class="value" id="stat-open-rate">0%</div>
+        <div class="progress-bar"><div class="progress-fill" id="bar-open" style="width:0%;background:#185FA5"></div></div>
+      </div>
+      <div class="metric highlight"><div class="label">Link clicks</div><div class="value" id="stat-clicks">0</div></div>
+      <div class="metric highlight">
+        <div class="label">Click rate</div><div class="value" id="stat-click-rate">0%</div>
+        <div class="progress-bar"><div class="progress-fill" id="bar-click" style="width:0%;background:#0F6E56"></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Email event log</div>
+      <div id="email-log"><div class="empty-state"><i class="ti ti-mail-off" style="font-size:32px;display:block;margin-bottom:8px"></i>No email events yet.</div></div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS PAGE -->
+  <div id="page-analytics" class="page">
+    <div class="metric-grid">
+      <div class="metric"><div class="label">Total leads</div><div class="value" id="an-leads">0</div></div>
+      <div class="metric"><div class="label">Emails sent</div><div class="value" id="an-sent">0</div></div>
+      <div class="metric highlight"><div class="label">Emails opened</div><div class="value" id="an-opened">0</div></div>
+      <div class="metric highlight"><div class="label">Links clicked</div><div class="value" id="an-clicked">0</div></div>
+      <div class="metric">
+        <div class="label">Open rate</div><div class="value" id="an-open-rate">0%</div>
+        <div class="progress-bar"><div class="progress-fill" id="an-bar-open" style="width:0%;background:#185FA5"></div></div>
+      </div>
+      <div class="metric">
+        <div class="label">Click rate</div><div class="value" id="an-click-rate">0%</div>
+        <div class="progress-bar"><div class="progress-fill" id="an-bar-click" style="width:0%;background:#0F6E56"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Engagement over time</div>
+      <div style="position:relative;width:100%;height:220px">
+        <canvas id="engagementChart" role="img" aria-label="Bar chart showing sent, opened, clicked per lead"></canvas>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:10px;font-size:12px;color:#666">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#378ADD"></span>Sent</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#1D9E75"></span>Opened</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#534AB7"></span>Clicked</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Lead priority breakdown</div>
+      <div style="position:relative;width:100%;height:180px">
+        <canvas id="priorityChart" role="img" aria-label="Doughnut chart of lead priority distribution"></canvas>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:10px;font-size:12px;color:#666;justify-content:center">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#E24B4A"></span>High</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#EF9F27"></span>Medium</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#639922"></span>Low</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ── State ── */
+let leads = [];
+let emailEvents = [];
+let engChart, prioChart;
+
+/* ── Navigation ── */
+function switchPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const map = { form: 0, leads: 1, email: 2, analytics: 3 };
+  document.querySelectorAll('.nav button')[map[id]].classList.add('active');
+  if (id === 'analytics') setTimeout(renderCharts, 50);
+}
+
+/* ── Toast ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ── AI Classification ── */
+function classifyLead(req) {
+  const r = req.toLowerCase();
+  let category = 'General Inquiry', priority = 'Medium';
+  if (r.includes('ai') || r.includes('automation') || r.includes('chatbot') || r.includes('ml') || r.includes('machine learning'))
+    { category = 'AI Automation'; priority = 'High'; }
+  else if (r.includes('website') || r.includes('web') || r.includes('app') || r.includes('mobile'))
+    { category = 'Web/App Development'; priority = 'High'; }
+  else if (r.includes('crm') || r.includes('sales') || r.includes('lead') || r.includes('marketing'))
+    { category = 'Sales & Marketing Tech'; priority = 'High'; }
+  else if (r.includes('data') || r.includes('analytics') || r.includes('dashboard') || r.includes('report'))
+    { category = 'Data Analytics'; priority = 'Medium'; }
+  else if (r.includes('support') || r.includes('help') || r.includes('consult') || r.includes('advice'))
+    { category = 'Consulting'; priority = 'Low'; }
+  else if (r.includes('ecommerce') || r.includes('shop') || r.includes('payment') || r.includes('store'))
+    { category = 'E-Commerce'; priority = 'Medium'; }
+  return { category, priority };
+}
+
+/* ── Helpers ── */
+function initials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  return Math.floor(s / 3600) + 'h ago';
+}
+
+/* ── Form Submission ── */
+function submitLead() {
+  const name    = document.getElementById('f-name').value.trim();
+  const email   = document.getElementById('f-email').value.trim();
+  const phone   = document.getElementById('f-phone').value.trim();
+  const company = document.getElementById('f-company').value.trim();
+  const req     = document.getElementById('f-req').value.trim();
+  const err     = document.getElementById('form-error');
+
+  if (!name || !email || !req) { err.textContent = 'Name, email, and requirement are required.'; err.style.display = 'inline'; return; }
+  if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) { err.textContent = 'Enter a valid email address.'; err.style.display = 'inline'; return; }
+  err.style.display = 'none';
+
+  const cls     = classifyLead(req);
+  const ts      = Date.now();
+  const trackId = 'TRK-' + Math.random().toString(36).substr(2, 8).toUpperCase();
+  const trackUrl = 'https://yoursite.com/track/' + trackId;
+
+  /* Store lead */
+  const lead = { id: ts, name, email, phone, company, req, ts, trackId, category: cls.category, priority: cls.priority, emailOpened: false, linkClicked: false };
+  leads.unshift(lead);
+
+  /* Log sent event */
+  emailEvents.unshift({ type: 'sent', leadId: ts, name, email, ts, trackId });
+
+  /* Simulate open + click with realistic delays */
+  const openDelay  = 4000 + Math.random() * 8000;
+  const clickDelay = openDelay + 3000 + Math.random() * 5000;
+  if (Math.random() > 0.25) {
+    setTimeout(() => {
+      lead.emailOpened = true;
+      emailEvents.unshift({ type: 'opened', leadId: ts, name, email, ts: Date.now(), trackId });
+      updateStats();
+    }, openDelay);
+    if (Math.random() > 0.45) {
+      setTimeout(() => {
+        lead.linkClicked = true;
+        emailEvents.unshift({ type: 'clicked', leadId: ts, name, email, ts: Date.now(), trackId, url: trackUrl });
+        updateStats();
+      }, clickDelay);
+    }
+  }
+
+  /* Render email preview */
+  const firstName = name.split(' ')[0];
+  document.getElementById('email-preview-content').innerHTML =
+    `<strong>To:</strong> ${email}<br><strong>Subject:</strong> We received your requirement — ${cls.category}
+    <hr>
+    Hi <strong>${firstName}</strong>,<br><br>
+    Thank you for reaching out to us. We've received your requirement:<br><br>
+    <em style="color:#111">"${req}"</em><br><br>
+    Our team will analyse your needs and get back to you shortly.<br><br>
+    In the meantime, learn more about how we can help:<br>
+    <span class="tlink" onclick="simulateClick('${trackId}','${ts}')">${trackUrl}</span><br><br>
+    Regards,<br><strong>Team LeadFlow</strong><br>
+    <span style="font-size:11px;color:#aaa">Tracking ID: ${trackId}</span>`;
+
+  /* Render AI classification */
+  document.getElementById('ai-output').innerHTML =
+    `<div style="font-size:13px;color:#555;margin-bottom:8px">Analysed requirement: <em>"${req.slice(0, 80)}${req.length > 80 ? '...' : ''}"</em></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:13px">Category:</span><span class="badge cat">${cls.category}</span>
+      <span style="margin-left:8px;font-size:13px">Priority:</span><span class="badge ${cls.priority.toLowerCase()}">${cls.priority}</span>
+    </div>`;
+
+  document.getElementById('email-preview-box').style.display = 'block';
+  document.getElementById('ai-result-box').style.display = 'block';
+
+  /* Clear form */
+  ['f-name','f-email','f-phone','f-company','f-req'].forEach(id => document.getElementById(id).value = '');
+
+  updateStats();
+  renderLeadList();
+  showToast('Lead saved — email sent to ' + email);
+}
+
+/* ── Simulate manual link click ── */
+function simulateClick(trackId, leadId) {
+  const lead = leads.find(l => l.id == leadId);
+  if (lead && !lead.linkClicked) {
+    lead.linkClicked = true;
+    lead.emailOpened = true;
+    emailEvents.unshift({ type: 'clicked', leadId, name: lead.name, email: lead.email, ts: Date.now(), trackId, url: 'https://yoursite.com/track/' + trackId });
+    updateStats();
+    showToast('Link click tracked for ' + lead.name);
+  }
+}
+
+/* ── Update all stats ── */
+function updateStats() {
+  const sent      = leads.length;
+  const opened    = leads.filter(l => l.emailOpened).length;
+  const clicked   = leads.filter(l => l.linkClicked).length;
+  const openRate  = sent > 0 ? Math.round(opened / sent * 100) : 0;
+  const clickRate = sent > 0 ? Math.round(clicked / sent * 100) : 0;
+
+  [['stat-sent','an-sent'], ['stat-opened','an-opened'], ['stat-clicks','an-clicked'],
+   ['stat-open-rate','an-open-rate'], ['stat-click-rate','an-click-rate']].forEach(([a, b]) => {
+    const vals = { 'stat-sent': sent, 'an-sent': sent, 'stat-opened': opened, 'an-opened': opened,
+                   'stat-clicks': clicked, 'an-clicked': clicked,
+                   'stat-open-rate': openRate + '%', 'an-open-rate': openRate + '%',
+                   'stat-click-rate': clickRate + '%', 'an-click-rate': clickRate + '%' };
+    [a, b].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = vals[id]; });
+  });
+
+  [['bar-open','an-bar-open'], ['bar-click','an-bar-click']].forEach(([a, b]) => {
+    const w = a.includes('open') ? openRate : clickRate;
+    [a, b].forEach(id => { const el = document.getElementById(id); if (el) el.style.width = w + '%'; });
+  });
+
+  const anLeads = document.getElementById('an-leads');
+  if (anLeads) anLeads.textContent = sent;
+
+  renderEmailLog();
+  renderLeadList();
+}
+
+/* ── Render lead list ── */
+function renderLeadList() {
+  const el = document.getElementById('lead-list');
+  const badge = document.getElementById('lead-count-badge');
+  if (badge) badge.textContent = leads.length + ' lead' + (leads.length !== 1 ? 's' : '');
+  if (!leads.length) { el.innerHTML = '<div class="empty-state"><i class="ti ti-inbox" style="font-size:32px;display:block;margin-bottom:8px"></i>No leads yet.</div>'; return; }
+  el.innerHTML = leads.map(l => `
+    <div class="lead-row">
+      <div class="avatar">${initials(l.name)}</div>
+      <div class="lead-info">
+        <div class="lead-name">${l.name} &nbsp;<span class="badge ${l.priority.toLowerCase()}">${l.priority}</span> <span class="badge cat">${l.category}</span></div>
+        <div class="lead-meta">${l.email}${l.phone ? ' · ' + l.phone : ''}${l.company ? ' · ' + l.company : ''}</div>
+        <div class="lead-meta" style="margin-top:2px">${l.req.slice(0, 80)}${l.req.length > 80 ? '...' : ''}</div>
+      </div>
+      <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+        ${l.emailOpened ? '<span class="badge opened">Opened</span>' : '<span class="badge sent">Sent</span>'}
+        ${l.linkClicked ? '<span class="badge clicked">Clicked</span>' : ''}
+      </div>
+    </div>`).join('');
+}
+
+/* ── Render email event log ── */
+function renderEmailLog() {
+  const el = document.getElementById('email-log');
+  if (!emailEvents.length) { el.innerHTML = '<div class="empty-state"><i class="ti ti-mail-off" style="font-size:32px;display:block;margin-bottom:8px"></i>No events yet.</div>'; return; }
+  const icons  = { sent: 'ti-send', opened: 'ti-mail-opened', clicked: 'ti-cursor-text' };
+  const colors = { sent: '#185FA5', opened: '#0F6E56', clicked: '#534AB7' };
+  el.innerHTML = emailEvents.slice(0, 30).map(e => `
+    <div class="lead-row">
+      <i class="ti ${icons[e.type]}" style="font-size:18px;color:${colors[e.type]};flex-shrink:0"></i>
+      <div class="lead-info">
+        <div class="lead-name">${e.name} &nbsp;<span class="badge ${e.type}">${e.type.charAt(0).toUpperCase() + e.type.slice(1)}</span></div>
+        <div class="lead-meta">${e.email} &nbsp;·&nbsp; ${timeAgo(e.ts)}</div>
+        ${e.type === 'clicked' ? `<div class="lead-meta tlink" style="font-size:11px">${e.url}</div>` : ''}
+      </div>
+      <span style="font-size:11px;color:#aaa">${e.trackId}</span>
+    </div>`).join('');
+}
+
+/* ── Render charts ── */
+function renderCharts() {
+  const labels  = leads.slice().reverse().map(l => l.name.split(' ')[0]);
+  const sent    = leads.slice().reverse().map(() => 1);
+  const opened  = leads.slice().reverse().map(l => l.emailOpened ? 1 : 0);
+  const clicked = leads.slice().reverse().map(l => l.linkClicked ? 1 : 0);
+
+  if (engChart) engChart.destroy();
+  const ctx1 = document.getElementById('engagementChart');
+  if (ctx1) {
+    engChart = new Chart(ctx1, {
+      type: 'bar',
+      data: { labels, datasets: [
+        { label: 'Sent',    data: sent,    backgroundColor: '#378ADD', borderRadius: 3 },
+        { label: 'Opened',  data: opened,  backgroundColor: '#1D9E75', borderRadius: 3 },
+        { label: 'Clicked', data: clicked, backgroundColor: '#534AB7', borderRadius: 3 }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { ticks: { color: '#888' }, grid: { display: false } },
+                  y: { ticks: { color: '#888', stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } } } }
+    });
+  }
+
+  const high = leads.filter(l => l.priority === 'High').length;
+  const med  = leads.filter(l => l.priority === 'Medium').length;
+  const low  = leads.filter(l => l.priority === 'Low').length;
+
+  if (prioChart) prioChart.destroy();
+  const ctx2 = document.getElementById('priorityChart');
+  if (ctx2) {
+    prioChart = new Chart(ctx2, {
+      type: 'doughnut',
+      data: { labels: ['High', 'Medium', 'Low'],
+              datasets: [{ data: [high || 1, med || 1, low || 1], backgroundColor: ['#E24B4A', '#EF9F27', '#639922'], borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } }
+    });
+  }
+}
+</script>
+</body>
+</html>
